@@ -11,5 +11,5 @@ cwd=$(pwd)
 
 cd "$cwd"
 mkdir -p userlogs
-python -u demo.py with cfg.AAUmachine >> "$cwd/userlogs/log.txt" &
+python -u demo.py with cfg.baseline >> "$cwd/userlogs/log.txt" &
 

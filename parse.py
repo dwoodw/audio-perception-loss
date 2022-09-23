@@ -109,8 +109,8 @@ def dataset(csv_name, audio_folder, batch = 1):
 
 
 def main():
-    file_name = '/home/dwoodward/old_thesis/data/SASSEC/SASSEC/SASSEC_anonymized.csv'
-    audio_folder = '/home/dwoodward/old_thesis/data/SASSEC/SASSEC/Signals'
+    file_name = '/home/dwoodward/masters/data/SASSEC/SASSEC_anonymized.csv'
+    audio_folder = '/home/dwoodward/masters/data/SASSEC/Signals'
 
     batch = 1
     batch_data = dataset(file_name, audio_folder, batch)
