@@ -1,5 +1,11 @@
 #ignore log files
+logs/
+userlogs/
 **.log
 
 #ignore cache files
+__pycache__/
 **.pyc
+
+#ignore models
+models/
