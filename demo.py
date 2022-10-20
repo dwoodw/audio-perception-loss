@@ -5,6 +5,8 @@ import numpy as np
 import os
 import math
 import datetime
+import random
+
 
 import testModel
 import parse
@@ -17,10 +19,33 @@ def set_seed():
     seed = 1337
 
 def generate_dataset(model_config):
-    csv_data = parse.parseCSV(model_config['data_path'])
+    #get the dictionary where key = name of dataset value = list of csv files and signal folders (subfolders)
+    dataset_dict = parse.get_dataset_filenames(model_config)
+
+    #list of datasets and weights for random sampling
+    datasets_list, subdatasets_list, weights_list = parse.get_sampling_weights(dataset_dict)
+    print(subdatasets_list)
+
+    csv_dataset_list = list()    
+    #load the csv files for the subdatasets
+    for datasets in dataset_dict:
+        for subdatasets in dataset_dict[datasets][0]:
+            csv_data = parse.parseCSV(subdatasets)
+            csv_dataset_list.append(csv_data)
+
 
     while True:
-        data = parse.parseAudio(csv_data, model_config['audio_path'], batch=1)
+        dataset_selection = random.choices(list(range(len(subdatasets_list))), weights=weights_list)[0]
+
+        print(dataset_selection, subdatasets_list[dataset_selection], datasets_list[dataset_selection])
+
+        for idx in range(len(dataset_dict[datasets_list[dataset_selection]][1])):
+            #print(dataset_dict[datasets_list[dataset_selection]][0][idx])
+            if dataset_dict[datasets_list[dataset_selection]][0][idx].find(subdatasets_list[dataset_selection]) != -1:
+                audio_path = dataset_dict[datasets_list[dataset_selection]][1][idx]
+
+
+        data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path, batch=1)
         data_length = data['audio_test'][0].shape[1]
         #print(data_length)
         audio = np.zeros((model_config['audio_len'], 2, 2))
@@ -31,7 +56,7 @@ def generate_dataset(model_config):
         audio_dict = dict()
         audio_dict['audio'] =  audio
         audio_dict['Ratingscore'] =  data['Ratingscore']
-        #print(audio_dict['audio'].shape)
+        print(audio_dict['audio'].shape)
 
         yield audio_dict
 
@@ -86,6 +111,9 @@ def train(model_config, experiment_id):
 
     dataset = dataset.map(lambda x : feature_labels(x, model_config['source_names']))
     train_dataset = dataset.batch(model_config["batch_size"],drop_remainder = True).prefetch(2)
+    print('gotten to train dataset\n', type(train_dataset))
+
+
     inputs = tf.keras.Input(shape = sep_input_shape[1:], batch_size=model_config['batch_size'])
 
     model = dict()
@@ -117,6 +145,7 @@ def train(model_config, experiment_id):
 def run(cfg):
     model_config = cfg["model_config"]
     print("SCRIPT START")
+
     # Create subfolders if they do not exist to save results
     for dir in [model_config["model_base_dir"], model_config["log_dir"]]:
         if not os.path.exists(dir):
