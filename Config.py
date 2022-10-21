@@ -58,6 +58,8 @@ def AAUmachine():
                     'datasets' : 'all', # use all datasets if more than one available for a given task
                     'data_path' : "/home/dwoodw19/thesis/SASSEC/SASSEC_anonymized.csv", # Set this to where the prep$                    
                     'audio_path' : "/home/dwoodw19/thesis/SASSEC/Signals",
+                    'datasets' : ['PEASS-DB',  'SAOC',  'SASSEC',  'SiSEC08'], # use all datasets if more than one available for a given task
+                    'data_base_dir' : "/home/dwoodw19/thesis/data/",
                     'epochs' :  1000, #number of epochs to train
                     "estimates_path" : "/home/dwoodw19/thesis/BSS_metric/estimates", # SET THIS PATH TO WHERE YOU WA$                    
                     'expected_sr': 44100,  # Downsample all audio input to this sampling rate
