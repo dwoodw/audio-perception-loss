@@ -30,11 +30,16 @@ def parseCSV(filename):
                 pass
             elif idx > 0:
                 Testname, Listener, Trials, Condition, Ratingscore = line.split(",")
-                out['Testname'].append(Testname)
-                out['Listener'].append(Listener)
-                out['Trials'].append(Trials)
-                out['Condition'].append(Condition)
-                out['Ratingscore'].append(int(Ratingscore.replace('\n', '')))
+                if Ratingscore != 'NaN\n' and Condition != 'SAOC' and Condition != 'hidden_ref':
+                    out['Testname'].append(Testname)
+                    out['Listener'].append(Listener) 
+                    out['Trials'].append(Trials)
+                    #rename for inconsistency between signal names and csv
+                    if(Testname != 'PEASS-DB'):
+                        out['Condition'].append(Condition.replace('anchor', 'anker_mix'))
+                    else:
+                        out['Condition'].append(Condition)
+                    out['Ratingscore'].append(int(Ratingscore.replace('\n', '')))
         print('Finished Parsing CSV file')
         return out
 
@@ -75,7 +80,8 @@ def parseAudio(csv_data, audio_folder = 'SASSEC/SASSEC/Signals', batch = -1):
         num_tests = len(csv_data['Testname'])
         num_list = random.sample(range(0, num_tests), batch)
 
-    #print(batch, num_list)
+    #print('len of data: ',len(csv_data['Condition']))  
+    #print('numlist length', num_list)
     #for each audio name in SASSEC data
     for idx in num_list:
         audio_files = csv_data['Trials'][idx]
@@ -106,6 +112,50 @@ def dataset(csv_name, audio_folder, batch = 1):
     audio_data = parseAudio(csv_data, audio_folder, batch)
     return audio_data
 
+def get_dataset_filenames(model_config):
+    
+    dataset_dict = dict()
+
+    for dataset in model_config['datasets']:
+        
+        dataset_directory = model_config['data_base_dir'] + dataset
+        csv_files = list()
+        signal_folders = list()
+
+
+        for files_or_directories in os.listdir(dataset_directory):
+           
+            if(files_or_directories.endswith('.csv')):
+                csv_files.append(dataset_directory + '/' + files_or_directories)
+
+            if(files_or_directories.find('Signals') == 0):
+                signal_folders.append(dataset_directory + '/' + files_or_directories)
+
+        dataset_dict[dataset] = [csv_files, signal_folders]
+    
+    return dataset_dict
+
+def get_sampling_weights(dataset_dict):
+
+    weights_list = list()
+    subdatasets_list = list()
+    datasets_list = list()
+
+    #iterate all datasets
+    for datasets in dataset_dict:
+
+        trials = 0
+        #iterate for the number of sub folders/files in datasets
+        for dataset_subsection in dataset_dict[datasets][0]:
+            csv_data = parseCSV(dataset_subsection)
+            trials = trials + len(csv_data['Trials'])
+
+            datasets_list.append(datasets)
+            subdatasets_list.append(dataset_subsection)
+            weights_list.append(trials)
+            
+            
+    return datasets_list, subdatasets_list, weights_list
 
 
 def main():
