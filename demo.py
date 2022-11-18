@@ -24,7 +24,7 @@ def generate_dataset(model_config):
 
     #list of datasets and weights for random sampling
     datasets_list, subdatasets_list, weights_list = parse.get_sampling_weights(dataset_dict)
-    print(subdatasets_list)
+    #print(subdatasets_list)
 
     csv_dataset_list = list()    
     #load the csv files for the subdatasets
@@ -37,14 +37,14 @@ def generate_dataset(model_config):
     while True:
         dataset_selection = random.choices(list(range(len(subdatasets_list))), weights=weights_list)[0]
 
-        print(dataset_selection, subdatasets_list[dataset_selection], datasets_list[dataset_selection])
+        #print(dataset_selection, subdatasets_list[dataset_selection], datasets_list[dataset_selection])
 
         for idx in range(len(dataset_dict[datasets_list[dataset_selection]][1])):
             #print(dataset_dict[datasets_list[dataset_selection]][0][idx])
             if dataset_dict[datasets_list[dataset_selection]][0][idx].find(subdatasets_list[dataset_selection]) != -1:
                 audio_path = dataset_dict[datasets_list[dataset_selection]][1][idx]
 
-
+        print(audio_path)
         data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path, batch=1)
         data_length = data['audio_test'][0].shape[1]
         #print(data_length)
@@ -56,7 +56,7 @@ def generate_dataset(model_config):
         audio_dict = dict()
         audio_dict['audio'] =  audio
         audio_dict['Ratingscore'] =  data['Ratingscore']
-        print(audio_dict['audio'].shape)
+        #print(audio_dict['audio'].shape)
 
         yield audio_dict
 

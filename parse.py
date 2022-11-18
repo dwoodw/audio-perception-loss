@@ -80,8 +80,8 @@ def parseAudio(csv_data, audio_folder = 'SASSEC/SASSEC/Signals', batch = -1):
         num_tests = len(csv_data['Testname'])
         num_list = random.sample(range(0, num_tests), batch)
 
-    print('len of data: ',len(csv_data['Condition']))  
-    print('numlist length', num_list)
+    #print('len of data: ',len(csv_data['Condition']))  
+    #print('numlist length', num_list)
     #for each audio name in SASSEC data
     for idx in num_list:
         audio_files = csv_data['Trials'][idx]
