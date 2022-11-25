@@ -12,7 +12,8 @@ import random
 
 model_config = {'augmentation' : False, # Random attenuation of source signals to improve generalisation performance (data augmentation)
                 'batch_size' : 1, # Batch size
-                'datasets' : ['PEASS-DB',  'SAOC',  'SASSEC',  'SiSEC08'], # use all datasets if more than one available for a given task
+                'datasets' : ['SAOC'], # use all datasets if more than one available for a given task
+                #'datasets' : ['PEASS-DB',  'SAOC',  'SASSEC',  'SiSEC08'], # use all datasets if more than one available for a given task
                 'data_base_dir' : "/home/dwoodward/masters/data/",
                 'data_path' : "/home/dwoodward/masters/data/SASSEC/SASSEC_anonymized.csv", # Set this to where the preprocessed dataset should be saved
                 'audio_path' : "/home/dwoodward/masters/data/SASSEC/Signals",
@@ -69,7 +70,7 @@ def generate_dataset(model_config):
 
     #list of datasets and weights for random sampling
     datasets_list, subdatasets_list, weights_list = parse.get_sampling_weights(dataset_dict)
-    #print(subdatasets_list)
+    print(subdatasets_list)
 
     csv_dataset_list = list()    
     #load the csv files for the subdatasets
@@ -78,7 +79,7 @@ def generate_dataset(model_config):
             csv_data = parse.parseCSV(subdatasets)
             csv_dataset_list.append(csv_data)
 
-
+    #print(csv_dataset_list)
     while True:
         dataset_selection = random.choices(list(range(len(subdatasets_list))), weights=weights_list)[0]
 
@@ -89,7 +90,7 @@ def generate_dataset(model_config):
             if dataset_dict[datasets_list[dataset_selection]][0][idx].find(subdatasets_list[dataset_selection]) != -1:
                 audio_path = dataset_dict[datasets_list[dataset_selection]][1][idx]
 
-        print(audio_path)
+        printaudio = tf.Print(audio_path, [audio_path], 'audio path')
         data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path, batch=1)
         data_length = data['audio_test'][0].shape[1]
         #print(data_length)
@@ -186,6 +187,52 @@ def feature_labels(element,source_names):
 
     return feature, labels
 
+def dataset_test(model_config):
+        #get the dictionary where key = name of dataset value = list of csv files and signal folders (subfolders)
+    dataset_dict = parse.get_dataset_filenames(model_config)
+
+    #list of datasets and weights for random sampling
+    datasets_list, subdatasets_list, weights_list = parse.get_sampling_weights(dataset_dict)
+
+    csv_dataset_list = list()    
+    #load the csv files for the subdatasets
+    for datasets in dataset_dict:
+        for subdatasets in dataset_dict[datasets][0]:
+            #parse all the datasets e.g ...data/SiSEC08/SisEC08_anonymized.csv and append all data to csv dataset list
+            csv_data = parse.parseCSV(subdatasets)
+            csv_dataset_list.append(csv_data)
+
+    while True:
+        #loading weights for the datasets for randomness
+        dataset_selection = random.choices(list(range(len(subdatasets_list))), weights=weights_list)[0]
+
+        #sort lists because on different machines and setups sometimes result in different orders leading to errors 
+        #when trying to find the equivilent csv to folder below
+        dataset_dict[datasets_list[dataset_selection]][1].sort()
+        dataset_dict[datasets_list[dataset_selection]][0].sort()
+
+        #loop across the length of csv files (1 refers to Signal folders, 0 would be .csv files)
+        #dataset_dict = names from config file
+        #datasets_list = similar to dictionary, a list of datasets which contains multiples for different folders
+        for idx in range(len(dataset_dict[datasets_list[dataset_selection]][1])):
+            #If statement to find the index for the folder which corresponds to the csv file
+            if dataset_dict[datasets_list[dataset_selection]][0][idx].find(subdatasets_list[dataset_selection]) != -1:
+                audio_path = dataset_dict[datasets_list[dataset_selection]][1][idx]
+
+        data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path, batch=1)
+        data_length = data['audio_test'][0].shape[1]
+        #print(data_length)
+        audio = np.zeros((model_config['audio_len'], 2, 2))
+        audio[:data_length,:,0] = np.transpose(data['audio_test'][0])
+        audio[:data_length,:,1] = np.transpose(data['audio_ref'][0])
+
+
+        audio_dict = dict()
+        audio_dict['audio'] =  audio
+        audio_dict['Ratingscore'] =  data['Ratingscore']
+
+        return audio_dict
+
 def main():
     disc_input_shape = [model_config["batch_size"],  model_config['audio_len'], 2, 2]  # Shape of input
 
@@ -196,32 +243,34 @@ def main():
     #sep input [1, 440999, 2, 2] <class 'list'>
     #sep output [1] <class 'list'>
 
+    dataset = dataset_test(model_config)
+
 
     #print(create_dataset_types())
     #print(create_dataset_shapes(sep_output_shape, sep_input_shape[1:4]))
-    dataset = tf.data.Dataset.from_generator(lambda: generate_dataset(model_config), 
-                                                                    (create_dataset_types()), 
-                                                                    (create_dataset_shapes(sep_output_shape, sep_input_shape[1:4])))
+    # dataset = tf.data.Dataset.from_generator(lambda: generate_dataset(model_config), 
+    #                                                                 (create_dataset_types()), 
+    #                                                                 (create_dataset_shapes(sep_output_shape, sep_input_shape[1:4])))
 
-    dataset = dataset.map(lambda x : feature_labels(x, model_config['source_names']))
-    train_dataset = dataset.batch(model_config["batch_size"],drop_remainder = True)
-    inputs = tf.keras.Input(shape = sep_input_shape[1:], batch_size=model_config['batch_size'])
-
-
+    #dataset = dataset.map(lambda x : feature_labels(x, model_config['source_names']))
+    #train_dataset = dataset.batch(model_config["batch_size"],drop_remainder = True)
+    #inputs = tf.keras.Input(shape = sep_input_shape[1:], batch_size=model_config['batch_size'])
 
 
-    print("Elements")
-    for element in train_dataset:
+
+
+    #print("Elements")
+    #for element in train_dataset:
         #print('type ', type(element))
         #print('length ', len(element))
 
         #print(type(element[1]))
-        print('keys', element[1].keys())
-        print('values', (element[1]["Ratingscore"].numpy()[0][0]))
+        # print('keys', element[1].keys())
+        # print('values', (element[1]["Ratingscore"].numpy()[0][0]))
 
 
-        print(type(element[0]))
-        print('element 0 length', element[0].numpy().shape)
+        # print(type(element[0]))
+        # print('element 0 length', element[0].numpy().shape)
         #print(type( element[0].numpy()))
         #print(element[0].numpy())
         #audio_spec = abs(stft((element[0]))).numpy()

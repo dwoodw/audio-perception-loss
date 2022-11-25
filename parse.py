@@ -40,7 +40,7 @@ def parseCSV(filename):
                     else:
                         out['Condition'].append(Condition)
                     out['Ratingscore'].append(int(Ratingscore.replace('\n', '')))
-        print('Finished Parsing CSV file')
+        #print('Finished Parsing CSV file')
         return out
 
 def stereoCheck(audio_data):

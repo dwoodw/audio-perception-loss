@@ -19,35 +19,41 @@ def set_seed():
     seed = 1337
 
 def generate_dataset(model_config):
-    #get the dictionary where key = name of dataset value = list of csv files and signal folders (subfolders)
+        #get the dictionary where key = name of dataset value = list of csv files and signal folders (subfolders)
     dataset_dict = parse.get_dataset_filenames(model_config)
 
     #list of datasets and weights for random sampling
     datasets_list, subdatasets_list, weights_list = parse.get_sampling_weights(dataset_dict)
-    #print(subdatasets_list)
 
     csv_dataset_list = list()    
     #load the csv files for the subdatasets
     for datasets in dataset_dict:
         for subdatasets in dataset_dict[datasets][0]:
+            #parse all the datasets e.g ...data/SiSEC08/SisEC08_anonymized.csv and append all data to csv dataset list
             csv_data = parse.parseCSV(subdatasets)
             csv_dataset_list.append(csv_data)
 
-
     while True:
+        #loading weights for the datasets for randomness
         dataset_selection = random.choices(list(range(len(subdatasets_list))), weights=weights_list)[0]
 
-        #print(dataset_selection, subdatasets_list[dataset_selection], datasets_list[dataset_selection])
+        #sort lists because on different machines and setups sometimes result in different orders leading to errors 
+        #when trying to find the equivilent csv to folder below
+        dataset_dict[datasets_list[dataset_selection]][1].sort()
+        dataset_dict[datasets_list[dataset_selection]][0].sort()
 
+        #loop across the length of csv files (1 refers to Signal folders, 0 would be .csv files)
+        #dataset_dict = names from config file
+        #datasets_list = similar to dictionary, a list of datasets which contains multiples for different folders
         for idx in range(len(dataset_dict[datasets_list[dataset_selection]][1])):
-            #print(dataset_dict[datasets_list[dataset_selection]][0][idx])
+            #If statement to find the index for the folder which corresponds to the csv file
             if dataset_dict[datasets_list[dataset_selection]][0][idx].find(subdatasets_list[dataset_selection]) != -1:
                 audio_path = dataset_dict[datasets_list[dataset_selection]][1][idx]
 
-        print(audio_path)
         data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path, batch=1)
         data_length = data['audio_test'][0].shape[1]
-        #print(data_length)
+
+
         audio = np.zeros((model_config['audio_len'], 2, 2))
         audio[:data_length,:,0] = np.transpose(data['audio_test'][0])
         audio[:data_length,:,1] = np.transpose(data['audio_ref'][0])
@@ -56,7 +62,6 @@ def generate_dataset(model_config):
         audio_dict = dict()
         audio_dict['audio'] =  audio
         audio_dict['Ratingscore'] =  data['Ratingscore']
-        #print(audio_dict['audio'].shape)
 
         yield audio_dict
 
