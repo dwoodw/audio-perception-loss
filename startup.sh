@@ -3,10 +3,10 @@
 #set gpu
 export CUDA_VISIBLE_DEVICES=0
 
-# set working directory
-cd 
+
+
 #cd "/home/dwoodw19/thesis/BSS_metric"
-cd "/home/dwoodward/masters/audio-perception-loss"
+#cd "/home/dwoodward/masters/audio-perception-loss"
 cwd=$(pwd)
 
 cd "$cwd"
