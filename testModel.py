@@ -25,21 +25,22 @@ class Unet(tf.keras.Model):
         self.hop = model_config['hop']
         self.keepFreqs = model_config['keepFreqs']
         
-        self.conv1 = Conv2D(16, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
-        self.conv2 = Conv2D(32, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
-        self.conv3 = Conv2D(64, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
-        self.conv4 = Conv2D(128, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
-        self.conv5 = Conv2D(256, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
-        self.conv6 = Conv2D(512, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
+        self.conv1 = Conv2D(32, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
+        self.conv2 = Conv2D(64, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
+        self.conv3 = Conv2D(128, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
+        self.conv4 = Conv2D(256, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
+        self.conv5 = Conv2D(512, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
+        self.conv6 = Conv2D(1024, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
         self.batch1 = BatchNormalization(axis = -1)
         self.batch2 = BatchNormalization(axis = -1)
         self.batch3 = BatchNormalization(axis = -1)
         self.batch4 = BatchNormalization(axis = -1)
         self.batch5 = BatchNormalization(axis = -1)
         self.dense1 = Dense(4096, activation='relu')
-        self.dense2 = Dense(4096, activation='relu')
+        self.dense2 = Dense(2048, activation='relu')
         self.dense3 = Dense(1024, activation='relu')
-        self.dense4 = Dense(1)
+        self.dense4 = Dense(512, activation='relu')
+        self.dense5 = Dense(1)
 
         self.flat = Flatten()
 
@@ -55,7 +56,6 @@ class Unet(tf.keras.Model):
         stfts = tf.reverse(stfts, [2])
         mix_mag_o = tf.abs(stfts)
         mix_mag = mix_mag_o[:,:,:self.keepFreqs,:]
-
         current_layer = mix_mag
         #down layer 1
         c1 = self.conv1(current_layer)
@@ -85,7 +85,8 @@ class Unet(tf.keras.Model):
         d2 = self.dense2(d1)
         d3 = self.dense3(d2)
         d4 = self.dense4(d3)
-        return d4
+        d5 = self.dense5(d4)
+        return d5
             
         
             
