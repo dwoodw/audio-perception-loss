@@ -141,7 +141,7 @@ def train(model_config, experiment_id):
 
     #unet_model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate=0.01), loss = 'mse')
     unet_model.compile(optimizer = tf.keras.optimizers.Adam(learning_rate=0.01), loss = tf.keras.losses.SparseCategoricalCrossentropy(), metrics=['accuracy'])
-    unet_model.fit(train_dataset, epochs= model_config["epochs"], steps_per_epoch= model_config["epoch_it"],  callbacks = [model_check_callback, tensorboard_callback])
+    unet_model.fit(train_dataset, epochs= model_config["epochs"], steps_per_epoch= model_config["epoch_it"],  callbacks = [model_check_callback])
     
  
 

@@ -94,7 +94,7 @@ class Unet(tf.keras.Model):
 
         #get additional psnr
         snr = tf.image.psnr(split2, split1, 1, name=None)
-        c6 = tf.math.multiply(c6, snr)
+        c6 = tf.concat([c6, tf.expand_dims(snr, axis=1)], axis =1)
         #Dense layers section
         d1 = self.dense1(c6)
         d2 = self.dense2(d1)
