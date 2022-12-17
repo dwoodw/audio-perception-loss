@@ -41,7 +41,7 @@ class Unet(tf.keras.Model):
         self.dense2 = Dense(2048, activation='relu')
         self.dense3 = Dense(1024, activation='relu')
         self.dense4 = Dense(512, activation='relu')
-        self.dense5 = Dense(100, activation = 'softmax')
+        self.dense5 = Dense(101, activation = 'softmax')
 
         self.dropout = Dropout(0.2)
 
@@ -50,6 +50,9 @@ class Unet(tf.keras.Model):
         
     def call(self, inputs):
         split1, split2 = tf.split(inputs, 2, 3)
+
+
+
         diff = tf.math.subtract(split1, split2)
         diff_flat = tf.reshape(diff, [tf.shape(diff)[0], tf.shape(diff)[1], tf.shape(diff)[2]])
 
@@ -89,8 +92,10 @@ class Unet(tf.keras.Model):
         #down layer 6
         c6 = self.flat(e5)
 
+        #get additional psnr
+        snr = tf.image.psnr(split2, split1, 1, name=None)
+        c6 = tf.math.multiply(c6, snr)
         #Dense layers section
-        
         d1 = self.dense1(c6)
         d2 = self.dense2(d1)
         d3 = self.dense3(d2)

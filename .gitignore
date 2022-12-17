@@ -9,6 +9,7 @@ __pycache__/
 
 #ignore models
 models/
+estimates/
 
 #ignore test files 
 dataset_dir.py
