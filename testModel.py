@@ -42,6 +42,8 @@ class Unet(tf.keras.Model):
         self.dense4 = Dense(512, activation='relu')
         self.dense5 = Dense(1)
 
+        self.dropout = Dropout(0.2)
+
         self.flat = Flatten()
 
         
@@ -61,39 +63,39 @@ class Unet(tf.keras.Model):
         c1 = self.conv1(current_layer)
         b1 = self.batch1(c1)
         e1 = tf.keras.activations.elu(b1)
+        #e1 = self.dropout(e1)
         #down layer 2
         c2 = self.conv2(e1)
         b2 = self.batch2(c2)
         e2 = tf.keras.activations.elu(b2)
+        #e2 = self.dropout(e2)
         #down layer 3
         c3 = self.conv3(e2)
         b3 = self.batch3(c3)
         e3 = tf.keras.activations.elu(b3)
+        #e3 = self.dropout(e3)
         #down layer 4
         c4 = self.conv4(e3)
         b4 = self.batch4(c4)
         e4 = tf.keras.activations.elu(b4)
+        #e4 = self.dropout(e4)
         #down layer 5
         c5 = self.conv5(e4)
         b5 = self.batch5(c5)
         e5 = tf.keras.activations.elu(b5)
+        #e5 = self.dropout(e5)
+
         #down layer 6
         c6 = self.flat(e5)
 
         #Dense layers section
         d1 = self.dense1(c6)
+        
         d2 = self.dense2(d1)
         d3 = self.dense3(d2)
         d4 = self.dense4(d3)
         d5 = self.dense5(d4)
-        return d5
-            
-        
-            
-            
-
-
-
+        return  d5
 
 
 

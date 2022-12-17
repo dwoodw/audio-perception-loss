@@ -66,7 +66,7 @@ def create_dict(csv_data, audio_test, audio_ref, num_list):
 
 
 
-def parseAudio(csv_data, audio_folder = 'SASSEC/SASSEC/Signals', batch = -1):
+def parseAudio(csv_data, audio_folder = 'SASSEC/SASSEC/Signals', batch_idx = -1, inference = 0):
     '''
     parseAudio returns a dictionary of lists corresponding to CSV file 
     audio - stereo audio files 
@@ -74,11 +74,12 @@ def parseAudio(csv_data, audio_folder = 'SASSEC/SASSEC/Signals', batch = -1):
     audio_ref = list()
     audio_test = list()
     
-    if batch == -1:
-        num_list = range(len(csv_data['Testname']))
-    else:
+    if batch_idx == -1:
         num_tests = len(csv_data['Testname'])
-        num_list = random.sample(range(0, num_tests), batch)
+        num_list = random.sample(range(0, num_tests), 1)
+    else:
+        num_list = [batch_idx]
+    
 
     #print('len of data: ',len(csv_data['Condition']))  
     #print('numlist length', num_list)
@@ -96,8 +97,17 @@ def parseAudio(csv_data, audio_folder = 'SASSEC/SASSEC/Signals', batch = -1):
         ref = stereoCheck(ref)
         audio_ref.append(ref)
         
+    if inference == 0:
+        return create_dict(csv_data, audio_test, audio_ref, num_list)
+    else:
+        audio = dict()
+        audio['audio_test'] = audio_test
+        audio['audio_ref'] = audio_ref
+        
 
-    return create_dict(csv_data, audio_test, audio_ref, num_list)
+        return audio
+
+
 
 def dataset(csv_name, audio_folder, batch = 1):
     '''

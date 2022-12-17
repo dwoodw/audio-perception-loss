@@ -7,7 +7,7 @@ import math
 import datetime
 import random
 
-
+import VGG 
 import testModel
 import parse
 
@@ -50,7 +50,7 @@ def generate_dataset(model_config):
             if dataset_dict[datasets_list[dataset_selection]][0][idx].find(subdatasets_list[dataset_selection]) != -1:
                 audio_path = dataset_dict[datasets_list[dataset_selection]][1][idx]
 
-        data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path, batch=1)
+        data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path)
         data_length = data['audio_test'][0].shape[1]
 
 
@@ -124,7 +124,7 @@ def train(model_config, experiment_id):
     model = dict()
     outputs = dict()
     for source in model_config["source_names"]:
-        model[source] = testModel.Unet(model_config)
+        model[source] = VGG.Unet(model_config)
         outputs[source] = model[source](inputs)
     
     unet_model = tf.keras.Model(inputs=inputs, outputs = outputs)
