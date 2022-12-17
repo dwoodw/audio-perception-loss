@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 
 from tensorflow.keras.layers import (
     Dense,
@@ -95,4 +96,4 @@ class Unet(tf.keras.Model):
         d3 = self.dense3(d2)
         d4 = self.dense4(d3)
         d5 = self.dense5(d4)
-        return d5
+        return np.argmax(d5)
