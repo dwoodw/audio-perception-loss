@@ -7,7 +7,6 @@ import math
 import datetime
 import random
 
-import VGG 
 import testModel
 import parse
 
