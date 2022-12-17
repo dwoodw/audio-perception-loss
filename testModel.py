@@ -40,7 +40,7 @@ class Unet(tf.keras.Model):
         self.dense2 = Dense(2048, activation='relu')
         self.dense3 = Dense(1024, activation='relu')
         self.dense4 = Dense(512, activation='relu')
-        self.dense5 = Dense(1)
+        self.dense5 = Dense(100, activation = 'softmax')
 
         self.dropout = Dropout(0.2)
 

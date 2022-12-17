@@ -124,7 +124,7 @@ def train(model_config, experiment_id):
     model = dict()
     outputs = dict()
     for source in model_config["source_names"]:
-        model[source] = VGG.Unet(model_config)
+        model[source] = testModel.Unet(model_config)
         outputs[source] = model[source](inputs)
     
     unet_model = tf.keras.Model(inputs=inputs, outputs = outputs)
