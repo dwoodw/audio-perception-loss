@@ -61,7 +61,7 @@ def AAUmachine():
                     'datasets' : ['PEASS-DB',  'SAOC', 'SASSEC',  'SiSEC08'], # use all datasets if more than one available for a given task
                     'data_base_dir' : "/home/dwoodw19/thesis/data/",
                     'epochs' :  1000, #number of epochs to train
-                    "estimates_path" : "/home/dwoodw19/thesis/BSS_metric/estimates", # SET THIS PATH TO WHERE YOU WA$                    
+                    "estimates_path" : "/home/dwoodw19/thesis/audio-perception-loss/models", # SET THIS PATH TO WHERE YOU WA$                    
                     'expected_sr': 44100,  # Downsample all audio input to this sampling rate
                     'fft_size' : 4096,
                     'hop' : 1024,
@@ -70,7 +70,7 @@ def AAUmachine():
                     "init_sup_sep_lr" : 1e-4, # Supervised separator learning rate
                     'keepFreqs' : 1024,
                     "log_dir" : "logs", # Base folder for logs files
-                    "model_base_dir" : "/home/dwoodw19/thesis/BSS_metric/estimates", # Base folder for model checkpo$                    
+                    "model_base_dir" : "/home/dwoodw19/thesis/audio-perception-loss/models", # Base folder for model checkpo$                    
                     'network' : 'Convnet', # Type of network architecture, either unet (our model) or unet_spectrogr$                    
                     "num_frames": 1024 * 319 + 4096, # DESIRED number of time frames in the output waveform per samp$  
                     "audio_len" : 500000,                  
