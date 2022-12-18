@@ -54,13 +54,13 @@ class Unet(tf.keras.Model):
         dr1= self.dropout(d1)
 
         d2 = self.dense2(dr1)
-        dr2= self.dropout(d1)
+        dr2= self.dropout(d2)
 
         d3 = self.dense3(dr2)
-        dr3= self.dropout(d1)
+        dr3= self.dropout(d3)
 
         d4 = self.dense4(dr3)
-        dr4= self.dropout(d1)
+        dr4= self.dropout(d4)
 
         d5 = self.dense5(dr4)
 
