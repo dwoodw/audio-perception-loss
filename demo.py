@@ -41,6 +41,9 @@ def generate_dataset(model_config):
     while True:
         dataset_selection = random.choices(list(range(len(subdatasets_list))), weights=weights_list)[0]
 
+        dataset_dict[datasets_list[dataset_selection]][1].sort()
+        dataset_dict[datasets_list[dataset_selection]][0].sort()
+
         #print(dataset_selection, subdatasets_list[dataset_selection], datasets_list[dataset_selection])
 
         for idx in range(len(dataset_dict[datasets_list[dataset_selection]][1])):
@@ -80,7 +83,6 @@ def generate_dataset(model_config):
                 
 
             features[:, idx+1] = feats[idx]
-
         audio_dict['audio'] = features
 
         yield audio_dict
