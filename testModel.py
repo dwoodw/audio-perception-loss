@@ -26,21 +26,10 @@ class Unet(tf.keras.Model):
         self.hop = model_config['hop']
         self.keepFreqs = model_config['keepFreqs']
         
-        self.conv1 = Conv2D(32, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
-        self.conv2 = Conv2D(64, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
-        self.conv3 = Conv2D(128, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
-        self.conv4 = Conv2D(256, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
-        self.conv5 = Conv2D(512, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
-        self.conv6 = Conv2D(1024, [5,5], strides = (2,2), padding = 'same', kernel_initializer= tf.initializers.he_uniform(50) )
-        self.batch1 = BatchNormalization(axis = -1)
-        self.batch2 = BatchNormalization(axis = -1)
-        self.batch3 = BatchNormalization(axis = -1)
-        self.batch4 = BatchNormalization(axis = -1)
-        self.batch5 = BatchNormalization(axis = -1)
-        self.dense1 = Dense(4096, activation='relu')
-        self.dense2 = Dense(4096, activation='relu')
-        self.dense3 = Dense(1024, activation='relu')
-        self.dense4 = Dense(512, activation='relu')
+        self.dense1 = Dense(4096, activation='elu')
+        self.dense2 = Dense(4096, activation='elu')
+        self.dense3 = Dense(1024, activation='elu')
+        self.dense4 = Dense(512, activation='elu')
         self.dense5 = Dense(1)
 
         self.dropout = Dropout(0.2)
