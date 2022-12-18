@@ -90,8 +90,8 @@ def generate_dataset(model_config):
             if dataset_dict[datasets_list[dataset_selection]][0][idx].find(subdatasets_list[dataset_selection]) != -1:
                 audio_path = dataset_dict[datasets_list[dataset_selection]][1][idx]
 
-        printaudio = tf.Print(audio_path, [audio_path], 'audio path')
-        data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path, batch=1)
+        #printaudio = tf.Print(audio_path, [audio_path], 'audio path')
+        data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path)
         data_length = data['audio_test'][0].shape[1]
         #print(data_length)
         audio = np.zeros((model_config['audio_len'], 2, 2))
@@ -103,6 +103,7 @@ def generate_dataset(model_config):
         audio_dict['audio'] =  audio
         audio_dict['Ratingscore'] =  data['Ratingscore']
         #print(audio_dict['audio'].shape)
+        #print(audio_dict['Ratingscore'])
 
         yield audio_dict
 
@@ -143,6 +144,7 @@ def stft(audio):
     split1_flat = tf.keras.layers.Permute((2,1))(split1_flat)
     #import soundfile as sf
     #sf.write('stereo_file1.wav', split1_flat.numpy()[0,:,:].transpose(), 44100, 'PCM_24')
+    print('psnr: ', tf.image.psnr(split2, split1, 1, name=None))
     stfts = tf.signal.stft(split1_flat, frame_length=frame_len, frame_step=hop, fft_length=frame_len, window_fn=tf.signal.hann_window)
     stfts = tf.abs(tf.keras.layers.Permute((1,3,2))(stfts))
     mix_mag_o = tf.abs(stfts)
@@ -171,7 +173,7 @@ def display(stfts):
     # colorbar
     cbar = plot.colorbar()
     cbar.set_label('Db level')
-    plot.show()
+    #plot.show()
 
 def get_padding(shape):
         '''
@@ -219,7 +221,7 @@ def dataset_test(model_config):
             if dataset_dict[datasets_list[dataset_selection]][0][idx].find(subdatasets_list[dataset_selection]) != -1:
                 audio_path = dataset_dict[datasets_list[dataset_selection]][1][idx]
 
-        data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path, batch=1)
+        data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path)
         data_length = data['audio_test'][0].shape[1]
         #print(data_length)
         audio = np.zeros((model_config['audio_len'], 2, 2))
@@ -230,7 +232,6 @@ def dataset_test(model_config):
         audio_dict = dict()
         audio_dict['audio'] =  audio
         audio_dict['Ratingscore'] =  data['Ratingscore']
-
         return audio_dict
 
 def main():
@@ -248,19 +249,19 @@ def main():
 
     #print(create_dataset_types())
     #print(create_dataset_shapes(sep_output_shape, sep_input_shape[1:4]))
-    # dataset = tf.data.Dataset.from_generator(lambda: generate_dataset(model_config), 
-    #                                                                 (create_dataset_types()), 
-    #                                                                 (create_dataset_shapes(sep_output_shape, sep_input_shape[1:4])))
+    dataset = tf.data.Dataset.from_generator(lambda: generate_dataset(model_config), 
+                                                                     (create_dataset_types()), 
+                                                                     (create_dataset_shapes(sep_output_shape, sep_input_shape[1:4])))
 
-    #dataset = dataset.map(lambda x : feature_labels(x, model_config['source_names']))
-    #train_dataset = dataset.batch(model_config["batch_size"],drop_remainder = True)
-    #inputs = tf.keras.Input(shape = sep_input_shape[1:], batch_size=model_config['batch_size'])
+    dataset = dataset.map(lambda x : feature_labels(x, model_config['source_names']))
+    train_dataset = dataset.batch(model_config["batch_size"],drop_remainder = True)
+    inputs = tf.keras.Input(shape = sep_input_shape[1:], batch_size=model_config['batch_size'])
 
 
 
 
     #print("Elements")
-    #for element in train_dataset:
+    for element in train_dataset:
         #print('type ', type(element))
         #print('length ', len(element))
 
@@ -273,10 +274,10 @@ def main():
         # print('element 0 length', element[0].numpy().shape)
         #print(type( element[0].numpy()))
         #print(element[0].numpy())
-        #audio_spec = abs(stft((element[0]))).numpy()
+        audio_spec = abs(stft((element[0]))).numpy()
         #print(audio_spec.shape)
         #print('show spectrogram')
-        #display(audio_spec[0,0,:,:])
+        display(audio_spec[0,0,:,:])
         #print("\n\nDataset Type:", type(train_dataset))
 
 
