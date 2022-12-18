@@ -54,7 +54,7 @@ def baseline():
 def AAUmachine():
     print("Starting")
     model_config = {'augmentation' : False, # Random attenuation of source signals to improve generalisation perform$                    
-                    'batch_size' : 8, # Batch size
+                    'batch_size' : 1, # Batch size
                     'datasets' : 'all', # use all datasets if more than one available for a given task
                     'data_path' : "/home/dwoodw19/thesis/SASSEC/SASSEC_anonymized.csv", # Set this to where the prep$                    
                     'audio_path' : "/home/dwoodw19/thesis/SASSEC/Signals",
