@@ -8,6 +8,9 @@ import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import random
 
+import museval
+from pesq import pesq
+import scipy
 
 
 model_config = {'augmentation' : False, # Random attenuation of source signals to improve generalisation performance (data augmentation)
@@ -64,6 +67,15 @@ def create_dataset_types():
 
     return output_types
 
+def emptyCheck(audio_data):
+
+    for audio_channel in range(audio_data.ndim):
+        flag = not np.any(audio_data[audio_channel])
+        if flag:
+            print('Array is empty')
+
+    return audio_data
+
 def generate_dataset(model_config):
     #get the dictionary where key = name of dataset value = list of csv files and signal folders (subfolders)
     dataset_dict = parse.get_dataset_filenames(model_config)
@@ -94,17 +106,37 @@ def generate_dataset(model_config):
         data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path)
         data_length = data['audio_test'][0].shape[1]
         #print(data_length)
-        audio = np.zeros((model_config['audio_len'], 2, 2))
-        audio[:data_length,:,0] = np.transpose(data['audio_test'][0])
-        audio[:data_length,:,1] = np.transpose(data['audio_ref'][0])
-
+        audio = np.zeros((2, 2, model_config['audio_len'],))
+        audio[0,:, :data_length] = data['audio_test'][0]
+        audio[1,:, :data_length] = data['audio_ref'][0]
 
         audio_dict = dict()
-        audio_dict['audio'] =  audio
         audio_dict['Ratingscore'] =  data['Ratingscore']
-        #print(audio_dict['audio'].shape)
-        #print(audio_dict['Ratingscore'])
 
+        features = np.zeros((2,5))
+        for channels in range(2):
+            ref_downsamp =  scipy.signal.resample(audio[1, channels, :], int(np.floor((model_config['audio_len'])/(model_config['expected_sr']/16000))))
+            test_downsamp = scipy.signal.resample(audio[0, channels, :], int(np.floor((model_config['audio_len'])/(model_config['expected_sr']/16000))))
+            features[channels, 0] = pesq(16000, ref_downsamp, test_downsamp, 'wb')
+
+
+        sdr, isr, sir, sar = museval.evaluate(audio[1, :, :],  audio[0, :,:], win=44100, hop=44100, mode='v4', padding=True)
+
+        feats = [sdr, isr, sir, sar]
+        for idx in range(len(feats)):
+            feats[idx] = feats[idx].mean(axis = 1)
+
+            for channels in range(2):
+                if np.isnan(feats[idx][channels]):
+                    feats[idx][channels] = -30
+                elif np.isinf(feats[idx][channels]):
+                    feats[idx][channels] = 50
+                
+
+            features[:, idx+1] = feats[idx]
+
+        audio_dict['audio'] = features
+        print(features)
         yield audio_dict
 
 # def generate_dataset(model_config):
@@ -181,7 +213,7 @@ def get_padding(shape):
         :param shape: Desired output shape
         :return: Padding along each axis (total): (Input frequency, input time)
         '''
-        return [shape[0], shape[1], 2, 2]
+        return [shape[0], 2, 2,  shape[3]]
 
 def feature_labels(element,source_names):
     feature = element['audio']
@@ -235,9 +267,10 @@ def dataset_test(model_config):
         return audio_dict
 
 def main():
-    disc_input_shape = [model_config["batch_size"],  model_config['audio_len'], 2, 2]  # Shape of input
-
-    sep_input_shape = get_padding(np.array(disc_input_shape)) 
+    disc_input_shape = [model_config["batch_size"],  2, 5]  # Shape of input
+    
+    sep_input_shape = disc_input_shape
+    
     sep_output_shape = [1]
     #print('sep input', sep_input_shape, type(sep_input_shape))
     #print('sep output', sep_output_shape, type(sep_output_shape))

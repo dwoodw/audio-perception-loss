@@ -38,7 +38,7 @@ class Unet(tf.keras.Model):
         self.batch4 = BatchNormalization(axis = -1)
         self.batch5 = BatchNormalization(axis = -1)
         self.dense1 = Dense(4096, activation='relu')
-        self.dense2 = Dense(2048, activation='relu')
+        self.dense2 = Dense(4096, activation='relu')
         self.dense3 = Dense(1024, activation='relu')
         self.dense4 = Dense(512, activation='relu')
         self.dense5 = Dense(1)
@@ -49,51 +49,19 @@ class Unet(tf.keras.Model):
 
         
     def call(self, inputs):
-        split1, split2 = tf.split(inputs, 2, 3)
-        diff = tf.math.subtract(split1, split2)
-        diff_flat = tf.reshape(diff, [tf.shape(diff)[0], tf.shape(diff)[1], tf.shape(diff)[2]])
-
-        diff_flat = tf.keras.layers.Permute((2,1))(diff_flat)
-        stfts = tf.signal.stft(diff_flat, frame_length=self.frame_len, frame_step=self.hop, fft_length=self.frame_len, window_fn=tf.signal.hann_window)
-        stfts = tf.keras.layers.Permute((1,3,2))(stfts)
-        stfts = tf.reverse(stfts, [2])
-        mix_mag_o = tf.abs(stfts)
-        mix_mag = mix_mag_o[:,:,:self.keepFreqs,:]
-        current_layer = mix_mag
-        #down layer 1
-        c1 = self.conv1(current_layer)
-        b1 = self.batch1(c1)
-        e1 = tf.keras.activations.elu(b1)
-        e1 = self.dropout(e1)
-        #down layer 2
-        c2 = self.conv2(e1)
-        b2 = self.batch2(c2)
-        e2 = tf.keras.activations.elu(b2)
-        e2 = self.dropout(e2)
-        #down layer 3
-        c3 = self.conv3(e2)
-        b3 = self.batch3(c3)
-        e3 = tf.keras.activations.elu(b3)
-        e3 = self.dropout(e3)
-        #down layer 4
-        c4 = self.conv4(e3)
-        b4 = self.batch4(c4)
-        e4 = tf.keras.activations.elu(b4)
-        e4 = self.dropout(e4)
-        #down layer 5
-        c5 = self.conv5(e4)
-        b5 = self.batch5(c5)
-        e5 = tf.keras.activations.elu(b5)
-        e5 = self.dropout(e5)
-
-        #down layer 6
-        c6 = self.flat(e5)
-        snr = tf.image.psnr(split2, split1, 1, name=None)
-        c6 = tf.concat([c6, tf.expand_dims(snr, axis=1)], axis =1)
         #Dense layers section
-        d1 = self.dense1(c6)
-        d2 = self.dense2(d1)
-        d3 = self.dense3(d2)
-        d4 = self.dense4(d3)
-        d5 = self.dense5(d4)
+        d1 = self.dense1(inputs)
+        dr1= self.dropout(d1)
+
+        d2 = self.dense2(dr1)
+        dr2= self.dropout(d1)
+
+        d3 = self.dense3(dr2)
+        dr3= self.dropout(d1)
+
+        d4 = self.dense4(dr3)
+        dr4= self.dropout(d1)
+
+        d5 = self.dense5(dr4)
+
         return d5
