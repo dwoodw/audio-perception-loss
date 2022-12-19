@@ -31,7 +31,7 @@ def parseCSV(filename):
                 pass
             elif idx > 0:
                 Testname, Listener, Trials, Condition, Ratingscore = line.split(",")
-                if Ratingscore != 'NaN\n' and Condition != 'SAOC' and Condition != 'hidden_ref' and Condition != 'anchor':
+                if Ratingscore != 'NaN\n' and Condition != 'SAOC' and Condition != 'hidden_ref' and Condition != 'anker_mix':
                     out['Testname'].append(Testname)
                     out['Listener'].append(Listener) 
                     out['Trials'].append(Trials)
