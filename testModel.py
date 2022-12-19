@@ -96,10 +96,12 @@ class Unet(tf.keras.Model):
 
         #meta features layers
         snr = tf.image.psnr(split2, split1, 1, name=None)
-        snr = tf.expand_dims(snr
+        snr = tf.expand_dims(snr, axis =1)
         features = self.flat(features)
 
-        c6 = tf.concat([c6, snr, features], axis =1)
+        c6 = tf.concat([c6, features], axis =1)
+        #tf.print(snr)
+        #tf.print(features)
         #Dense layers section
         d1 = self.dense1(c6)
         d1 = self.dropout(d1)
