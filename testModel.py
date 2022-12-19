@@ -57,7 +57,7 @@ class Unet(tf.keras.Model):
         audio = (inputs[:, :, :, :self.audio_len])
         split1, split2 = tf.split(audio, 2, 1)
         diff = tf.math.subtract(split1, split2)
-        diff_flat = tf.reshape(diff, [tf.shape(split1)[1], tf.shape(split1)[2], tf.shape(split1)[3]])
+        diff_flat = tf.reshape(diff, [tf.shape(diff)[0], tf.shape(diff)[2], tf.shape(diff)[3]])
 
         stfts = tf.signal.stft(diff_flat, frame_length=self.frame_len, frame_step=self.hop, fft_length=self.frame_len, window_fn=tf.signal.hann_window)
         stfts = tf.keras.layers.Permute((1,3,2))(stfts)

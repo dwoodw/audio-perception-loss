@@ -7,7 +7,7 @@ config_ingredient = Ingredient("cfg")
 def cfg():
     # Base configuration
     model_config = {'augmentation' : False, # Random attenuation of source signals to improve generalisation performance (data augmentation)
-                    'batch_size' : 1, # Batch size
+                    'batch_size' : 8, # Batch size
                     'datasets' : ['PEASS-DB',  'SAOC', 'SASSEC',  'SiSEC08'], # use all datasets if more than one available for a given task
                     'data_base_dir' : "/home/dwoodward/masters/data1/",
                     'data_path' : "/home/dwoodward/masters/data/SASSEC/SASSEC_anonymized.csv", # Set this to where the preprocessed dataset should be saved
