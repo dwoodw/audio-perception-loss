@@ -97,7 +97,7 @@ def parseAudio(csv_data, audio_folder = 'SASSEC/SASSEC/Signals', batch_idx = -1,
             separator = ' '
             song_name = separator.join(trial_split[2:])
             audio_path = audio_path + song_name
-            print('path2', audio_path)
+       
             audio_path = audio_path + '/' + trial_split[0] + '.wav'
             test, _ = librosa.core.load(audio_path, sr=None, mono=False, offset=0.0, duration=None, dtype='float32')
         test = stereoCheck(test)
@@ -112,7 +112,7 @@ def parseAudio(csv_data, audio_folder = 'SASSEC/SASSEC/Signals', batch_idx = -1,
             separator = ' '
             song_name = separator.join(trial_split[2:])
             audio_path = audio_path + song_name
-            print('path2', audio_path)
+         
             audio_path = audio_path + '/' + trial_split[0] + '.wav'
             ref, _ = librosa.core.load(audio_path, sr=None, mono=False, offset=0.0, duration=None, dtype='float32')
 
