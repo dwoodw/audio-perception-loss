@@ -26,10 +26,10 @@ class Unet(tf.keras.Model):
         self.hop = model_config['hop']
         self.keepFreqs = model_config['keepFreqs']
         
-        self.dense1 = Dense(4096, activation='elu')
-        self.dense2 = Dense(4096, activation='elu')
-        self.dense3 = Dense(1024, activation='elu')
-        self.dense4 = Dense(512, activation='elu')
+        self.dense1 = Dense(4096, activation='relu')
+        self.dense2 = Dense(4096, activation='relu')
+        self.dense3 = Dense(1024, activation='relu')
+        self.dense4 = Dense(512, activation='relu')
         self.dense5 = Dense(1)
 
         self.dropout = Dropout(0.2)

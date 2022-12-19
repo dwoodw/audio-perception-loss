@@ -7,6 +7,7 @@ import numpy as np
 import os
 import librosa
 import random
+import math
 
 def parseCSV(filename):
     '''
@@ -39,7 +40,7 @@ def parseCSV(filename):
                         out['Condition'].append(Condition.replace('anchor', 'anker_mix'))
                     else:
                         out['Condition'].append(Condition)
-                    out['Ratingscore'].append(int(Ratingscore.replace('\n', '')))
+                    out['Ratingscore'].append(int(math.floor(float(Ratingscore.replace('\n', '')))))
         #print('Finished Parsing CSV file')
         return out
 
