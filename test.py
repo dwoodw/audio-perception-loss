@@ -7,6 +7,7 @@ import matplotlib.pyplot as plot
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import random
+import museval
 
 
 
@@ -31,6 +32,7 @@ model_config = {'augmentation' : False, # Random attenuation of source signals t
                 'network' : 'unet', # Type of network architecture, either unet (our model) or unet_spectrogram (Jansson et al 2017 model)
                 "num_frames": 1024 * 319 + 4096, # DESIRED number of time frames in the output waveform per samples (could be changed when using valid padding)
                 "audio_len": 500000,
+                "features_len": 4,
                 "num_snippets_per_track" : 10,# If train_rand_mode is 'per_min', then we are grabbing 10 snippets per minute. If train_rand_mode is 'per_song' then we are grabbing 10 snippets per track
                 'num_workers' : 7, # Number of processes used for each TF map operation used when loading the dataset
                 'num_projections' : 5,
@@ -94,36 +96,36 @@ def generate_dataset(model_config):
         data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path)
         data_length = data['audio_test'][0].shape[1]
         #print(data_length)
-        audio = np.zeros((model_config['audio_len'], 2, 2))
-        audio[:data_length,:,0] = np.transpose(data['audio_test'][0])
-        audio[:data_length,:,1] = np.transpose(data['audio_ref'][0])
+        audio = np.zeros((2, 2, model_config['audio_len']+model_config['features_len'],))
+        audio[0,:, :data_length] = data['audio_test'][0]
+        audio[1,:, :data_length] = data['audio_ref'][0]
+
+        features = np.zeros((2,4))
+        sdr, isr, sir, sar = museval.evaluate(audio[1, :, :],  audio[0, :,:], win=44100, hop=44100, mode='v4', padding=True)
+        feats = [sdr, isr, sir, sar]
+        for idx in range(len(feats)):
+            feats[idx] = feats[idx].mean(axis = 1)
+
+            for channels in range(2):
+                if np.isnan(feats[idx][channels]):
+                    feats[idx][channels] = -30
+                elif np.isinf(feats[idx][channels]):
+                    feats[idx][channels] = 50
+                
+
+            features[:, idx] = feats[idx]
+        for idx in range(2):
+            audio[idx,:, model_config['audio_len']:model_config['audio_len']+model_config['features_len']] = features
 
 
+        #print(features)
         audio_dict = dict()
         audio_dict['audio'] =  audio
         audio_dict['Ratingscore'] =  data['Ratingscore']
-        #print(audio_dict['audio'].shape)
-        #print(audio_dict['Ratingscore'])
 
         yield audio_dict
 
-# def generate_dataset(model_config):
-#     csv_data = parse.parseCSV(model_config['data_path'])
 
-#     data = parse.parseAudio(csv_data, model_config['audio_path'], batch=1)
-#     data_length = data['audio_test'][0].shape[1]
-#     #print(data_length)
-#     audio = np.zeros((model_config['audio_len'], 2, 2))
-#     audio[:data_length,:,0] = np.transpose(data['audio_test'][0])
-#     audio[:data_length,:,1] = np.transpose(data['audio_ref'][0])
-
-
-#     audio_dict = dict()
-#     audio_dict['audio'] =  audio
-#     audio_dict['Ratingscore'] =  data['Ratingscore']
-#     #print(audio_dict['audio'].shape)
-
-#     yield audio_dict
 
 
 def stft(audio):
@@ -134,17 +136,21 @@ def stft(audio):
     sr = 44100
     stft_time_max = 500000/sr #calculates number of time bins and converts to seconds
 
-    split1, split2 = tf.split(audio, 2, 3)
-    diff = tf.math.subtract(split1, split2)
-    diff_flat = tf.reshape(diff, [tf.shape(diff)[0], tf.shape(diff)[1], tf.shape(diff)[2]])
-    diff_flat = tf.keras.layers.Permute((2,1))(diff_flat)
 
-    #print(tf.shape(split1))
-    split1_flat = tf.reshape(split1, [tf.shape(split1)[0], tf.shape(split1)[1], tf.shape(split1)[2]])
-    split1_flat = tf.keras.layers.Permute((2,1))(split1_flat)
+    features = (audio[:, :, :, model_config['audio_len']:model_config['audio_len']+model_config['features_len']])
+    print(features)
+    audio = (audio[:, :, :, :model_config['audio_len']])
+    split1, split2 = tf.split(audio, 2, 1)
+    #diff = tf.math.subtract(split1, split2)
+    #diff_flat = tf.reshape(diff, [tf.shape(diff)[0], tf.shape(diff)[1], tf.shape(diff)[2]])
+    #diff_flat = tf.keras.layers.Permute((2,1))(diff_flat)
+
+    #print('split1 shape:', tf.shape(split1))
+    split1_flat = tf.reshape(split1, [tf.shape(split1)[1], tf.shape(split1)[2], tf.shape(split1)[3]])
+    #split1_flat = tf.keras.layers.Permute((2,1))(split1_flat)
     #import soundfile as sf
     #sf.write('stereo_file1.wav', split1_flat.numpy()[0,:,:].transpose(), 44100, 'PCM_24')
-    print('psnr: ', tf.image.psnr(split2, split1, 1, name=None))
+    #print('psnr: ', tf.image.psnr(split2, split1, 1, name=None))
     stfts = tf.signal.stft(split1_flat, frame_length=frame_len, frame_step=hop, fft_length=frame_len, window_fn=tf.signal.hann_window)
     stfts = tf.abs(tf.keras.layers.Permute((1,3,2))(stfts))
     mix_mag_o = tf.abs(stfts)
@@ -173,7 +179,7 @@ def display(stfts):
     # colorbar
     cbar = plot.colorbar()
     cbar.set_label('Db level')
-    #plot.show()
+    plot.show()
 
 def get_padding(shape):
         '''
@@ -181,7 +187,7 @@ def get_padding(shape):
         :param shape: Desired output shape
         :return: Padding along each axis (total): (Input frequency, input time)
         '''
-        return [shape[0], shape[1], 2, 2]
+        return [shape[0], 2, 2, shape[3]]
 
 def feature_labels(element,source_names):
     feature = element['audio']
@@ -224,10 +230,11 @@ def dataset_test(model_config):
         data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path)
         data_length = data['audio_test'][0].shape[1]
         #print(data_length)
-        audio = np.zeros((model_config['audio_len'], 2, 2))
-        audio[:data_length,:,0] = np.transpose(data['audio_test'][0])
-        audio[:data_length,:,1] = np.transpose(data['audio_ref'][0])
 
+        audio = np.zeros((2, 2, model_config['audio_len'],))
+        audio[0,:, :data_length] = data['audio_test'][0]
+        audio[1,:, :data_length] = data['audio_ref'][0]
+        print(audio.shape)
 
         audio_dict = dict()
         audio_dict['audio'] =  audio
@@ -235,7 +242,7 @@ def dataset_test(model_config):
         return audio_dict
 
 def main():
-    disc_input_shape = [model_config["batch_size"],  model_config['audio_len'], 2, 2]  # Shape of input
+    disc_input_shape = [model_config["batch_size"], 2, 2, model_config['audio_len']+model_config['features_len']]  # Shape of input
 
     sep_input_shape = get_padding(np.array(disc_input_shape)) 
     sep_output_shape = [1]

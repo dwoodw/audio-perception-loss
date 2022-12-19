@@ -7,7 +7,7 @@ config_ingredient = Ingredient("cfg")
 def cfg():
     # Base configuration
     model_config = {'augmentation' : False, # Random attenuation of source signals to improve generalisation performance (data augmentation)
-                    'batch_size' : 8, # Batch size
+                    'batch_size' : 1, # Batch size
                     'datasets' : ['PEASS-DB',  'SAOC', 'SASSEC',  'SiSEC08'], # use all datasets if more than one available for a given task
                     'data_base_dir' : "/home/dwoodward/masters/data/",
                     'data_path' : "/home/dwoodward/masters/data/SASSEC/SASSEC_anonymized.csv", # Set this to where the preprocessed dataset should be saved
@@ -26,6 +26,7 @@ def cfg():
                     'network' : 'unet', # Type of network architecture, either unet (our model) or unet_spectrogram (Jansson et al 2017 model)
                     "num_frames": 1024 * 319 + 4096, # DESIRED number of time frames in the output waveform per samples (could be changed when using valid padding)
                     "audio_len": 500000,
+                    "features_len": 4,
                     "num_snippets_per_track" : 10,# If train_rand_mode is 'per_min', then we are grabbing 10 snippets per minute. If train_rand_mode is 'per_song' then we are grabbing 10 snippets per track
                     'num_workers' : 7, # Number of processes used for each TF map operation used when loading the dataset
                     'num_projections' : 5,
@@ -54,7 +55,7 @@ def baseline():
 def AAUmachine():
     print("Starting")
     model_config = {'augmentation' : False, # Random attenuation of source signals to improve generalisation perform$                    
-                    'batch_size' : 1, # Batch size
+                    'batch_size' : 8, # Batch size
                     'datasets' : 'all', # use all datasets if more than one available for a given task
                     'data_path' : "/home/dwoodw19/thesis/SASSEC/SASSEC_anonymized.csv", # Set this to where the prep$                    
                     'audio_path' : "/home/dwoodw19/thesis/SASSEC/Signals",
@@ -73,7 +74,8 @@ def AAUmachine():
                     "model_base_dir" : "/home/dwoodw19/thesis/audio-perception-loss/models", # Base folder for model checkpo$                    
                     'network' : 'Convnet', # Type of network architecture, either unet (our model) or unet_spectrogr$                    
                     "num_frames": 1024 * 319 + 4096, # DESIRED number of time frames in the output waveform per samp$  
-                    "audio_len" : 500000,                  
+                    "audio_len" : 500000,
+                    "features_len": 4,                  
                     "num_snippets_per_track" : 10,# If train_rand_mode is 'per_min', then we are grabbing 10 snippet$                    
                     'num_workers' : 7, # Number of processes used for each TF map operation used when loading the da$                    
                     'num_projections' : 5,

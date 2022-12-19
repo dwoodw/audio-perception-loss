@@ -9,6 +9,7 @@ import random
 
 import testModel
 import parse
+import museval 
 
 ex = Experiment('Unet Keras Training', ingredients=[config_ingredient])
 
@@ -53,11 +54,29 @@ def generate_dataset(model_config):
         data_length = data['audio_test'][0].shape[1]
 
 
-        audio = np.zeros((model_config['audio_len'], 2, 2))
-        audio[:data_length,:,0] = np.transpose(data['audio_test'][0])
-        audio[:data_length,:,1] = np.transpose(data['audio_ref'][0])
+        audio = np.zeros((2, 2, model_config['audio_len']+model_config['features_len'],))
+        audio[0,:, :data_length] = data['audio_test'][0]
+        audio[1,:, :data_length] = data['audio_ref'][0]
+
+        features = np.zeros((2,4))
+        sdr, isr, sir, sar = museval.evaluate(audio[1, :, :],  audio[0, :,:], win=44100, hop=44100, mode='v4', padding=True)
+        feats = [sdr, isr, sir, sar]
+        for idx in range(len(feats)):
+            feats[idx] = feats[idx].mean(axis = 1)
+
+            for channels in range(2):
+                if np.isnan(feats[idx][channels]):
+                    feats[idx][channels] = -30
+                elif np.isinf(feats[idx][channels]):
+                    feats[idx][channels] = 50
+                
+
+            features[:, idx] = feats[idx]
+        for idx in range(2):
+            audio[idx,:, model_config['audio_len']:model_config['audio_len']+model_config['features_len']] = features
 
 
+        #print(features)
         audio_dict = dict()
         audio_dict['audio'] =  audio
         audio_dict['Ratingscore'] =  data['Ratingscore']
@@ -84,7 +103,7 @@ def get_padding(shape):
         :param shape: Desired output shape
         :return: Padding along each axis (total): (Input frequency, input time)
         '''
-        return [shape[0], shape[1], 2, 2]
+        return [shape[0], 2, 2, shape[3]]
 
 def create_dataset_shapes(output_shape, input_shape):
     output_shapes = dict()
@@ -97,7 +116,7 @@ def create_dataset_shapes(output_shape, input_shape):
 @config_ingredient.capture
 def train(model_config, experiment_id):
     # Determine input and output shapes
-    disc_input_shape = [model_config["batch_size"],  model_config['audio_len'], 2, 2]  # Shape of input
+    disc_input_shape = [model_config["batch_size"], 2, 2,  model_config['audio_len']+model_config['features_len']]  # Shape of input
 
     sep_input_shape = get_padding(np.array(disc_input_shape)) 
     sep_output_shape = [1]
