@@ -15,9 +15,9 @@ import scipy
 
 model_config = {'augmentation' : False, # Random attenuation of source signals to improve generalisation performance (data augmentation)
                 'batch_size' : 1, # Batch size
-                'datasets' : ['SAOC'], # use all datasets if more than one available for a given task
+                'datasets' : ['SiSEC18'], # use all datasets if more than one available for a given task
                 #'datasets' : ['PEASS-DB',  'SAOC',  'SASSEC',  'SiSEC08'], # use all datasets if more than one available for a given task
-                'data_base_dir' : "/home/dwoodward/masters/data/",
+                'data_base_dir' : "/home/dwoodward/masters/data1/",
                 'data_path' : "/home/dwoodward/masters/data/SASSEC/SASSEC_anonymized.csv", # Set this to where the preprocessed dataset should be saved
                 'audio_path' : "/home/dwoodward/masters/data/SASSEC/Signals",
                 'epochs' : 100, #number of epochs to train
@@ -95,14 +95,12 @@ def generate_dataset(model_config):
     while True:
         dataset_selection = random.choices(list(range(len(subdatasets_list))), weights=weights_list)[0]
 
-        #print(dataset_selection, subdatasets_list[dataset_selection], datasets_list[dataset_selection])
 
         for idx in range(len(dataset_dict[datasets_list[dataset_selection]][1])):
-            #print(dataset_dict[datasets_list[dataset_selection]][0][idx])
             if dataset_dict[datasets_list[dataset_selection]][0][idx].find(subdatasets_list[dataset_selection]) != -1:
                 audio_path = dataset_dict[datasets_list[dataset_selection]][1][idx]
 
-        #printaudio = tf.Print(audio_path, [audio_path], 'audio path')
+        
         data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path)
         data_length = data['audio_test'][0].shape[1]
         #print(data_length)
@@ -245,6 +243,8 @@ def dataset_test(model_config):
         dataset_dict[datasets_list[dataset_selection]][1].sort()
         dataset_dict[datasets_list[dataset_selection]][0].sort()
 
+        
+
         #loop across the length of csv files (1 refers to Signal folders, 0 would be .csv files)
         #dataset_dict = names from config file
         #datasets_list = similar to dictionary, a list of datasets which contains multiples for different folders
@@ -252,6 +252,7 @@ def dataset_test(model_config):
             #If statement to find the index for the folder which corresponds to the csv file
             if dataset_dict[datasets_list[dataset_selection]][0][idx].find(subdatasets_list[dataset_selection]) != -1:
                 audio_path = dataset_dict[datasets_list[dataset_selection]][1][idx]
+                print(audio_path)
 
         data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path)
         data_length = data['audio_test'][0].shape[1]
@@ -280,8 +281,6 @@ def main():
     dataset = dataset_test(model_config)
 
 
-    #print(create_dataset_types())
-    #print(create_dataset_shapes(sep_output_shape, sep_input_shape[1:4]))
     dataset = tf.data.Dataset.from_generator(lambda: generate_dataset(model_config), 
                                                                      (create_dataset_types()), 
                                                                      (create_dataset_shapes(sep_output_shape, sep_input_shape[1:4])))

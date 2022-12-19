@@ -31,16 +31,16 @@ def parseCSV(filename):
                 pass
             elif idx > 0:
                 Testname, Listener, Trials, Condition, Ratingscore = line.split(",")
-                if Ratingscore != 'NaN\n' and Condition != 'SAOC' and Condition != 'hidden_ref':
-                    out['Testname'].append(Testname)
-                    out['Listener'].append(Listener) 
-                    out['Trials'].append(Trials)
-                    #rename for inconsistency between signal names and csv
-                    if(Testname != 'PEASS-DB'):
-                        out['Condition'].append(Condition.replace('anchor', 'anker_mix'))
-                    else:
-                        out['Condition'].append(Condition)
-                    out['Ratingscore'].append(int(math.floor(float(Ratingscore.replace('\n', '')))))
+                if (Ratingscore != 'NaN\n' and Condition != 'SAOC' and Condition != 'hidden_ref' and Condition != 'anchor'):
+                        out['Testname'].append(Testname)
+                        out['Listener'].append(Listener) 
+                        out['Trials'].append(Trials)
+                        #rename for inconsistency between signal names and csv
+                        if(Testname != 'PEASS-DB'):
+                            out['Condition'].append(Condition.replace('anchor', 'anker_mix'))
+                        else:
+                            out['Condition'].append(Condition)
+                        out['Ratingscore'].append(int(math.floor(float(Ratingscore.replace('\n', '')))))
         #print('Finished Parsing CSV file')
         return out
 
@@ -88,13 +88,34 @@ def parseAudio(csv_data, audio_folder = 'SASSEC/SASSEC/Signals', batch_idx = -1,
     for idx in num_list:
         audio_files = csv_data['Trials'][idx]
         algo_num = csv_data['Condition'][idx]
-        audio_path = os.path.join(audio_folder, algo_num, audio_files + '.wav')
-        test, _ = librosa.core.load(audio_path, sr=None, mono=False, offset=0.0, duration=None, dtype='float32')
+        if(csv_data['Testname'][idx].find('SiSEC18') == -1):
+            audio_path = os.path.join(audio_folder, algo_num, audio_files + '.wav')
+            test, _ = librosa.core.load(audio_path, sr=None, mono=False, offset=0.0, duration=None, dtype='float32')
+        else:
+            audio_path = audio_folder + '/' + csv_data['Condition'][idx] + '/'
+            trial_split = csv_data['Trials'][idx].split()
+            separator = ' '
+            song_name = separator.join(trial_split[2:])
+            audio_path = audio_path + song_name
+            print('path2', audio_path)
+            audio_path = audio_path + '/' + trial_split[0] + '.wav'
+            test, _ = librosa.core.load(audio_path, sr=None, mono=False, offset=0.0, duration=None, dtype='float32')
         test = stereoCheck(test)
         audio_test.append(test)
+        
+        if(csv_data['Testname'][idx].find('SiSEC18') == -1):
+            audio_path = os.path.join(audio_folder, 'orig', audio_files + '.wav')
+            ref, _ = librosa.core.load(audio_path, sr=None, mono=False, offset=0.0, duration=None, dtype='float32')
+        else:
+            audio_path = audio_folder + '/' + csv_data['Condition'][idx] + '/'
+            trial_split = csv_data['Trials'][idx].split()
+            separator = ' '
+            song_name = separator.join(trial_split[2:])
+            audio_path = audio_path + song_name
+            print('path2', audio_path)
+            audio_path = audio_path + '/' + trial_split[0] + '.wav'
+            ref, _ = librosa.core.load(audio_path, sr=None, mono=False, offset=0.0, duration=None, dtype='float32')
 
-        audio_path = os.path.join(audio_folder, 'orig', audio_files + '.wav')
-        ref, _ = librosa.core.load(audio_path, sr=None, mono=False, offset=0.0, duration=None, dtype='float32')
         ref = stereoCheck(ref)
         audio_ref.append(ref)
         
