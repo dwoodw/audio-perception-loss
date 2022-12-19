@@ -9,7 +9,7 @@ def cfg():
     model_config = {'augmentation' : False, # Random attenuation of source signals to improve generalisation performance (data augmentation)
                     'batch_size' : 1, # Batch size
                     'datasets' : ['PEASS-DB',  'SAOC', 'SASSEC',  'SiSEC08'], # use all datasets if more than one available for a given task
-                    'data_base_dir' : "/home/dwoodward/masters/data/",
+                    'data_base_dir' : "/home/dwoodward/masters/data1/",
                     'data_path' : "/home/dwoodward/masters/data/SASSEC/SASSEC_anonymized.csv", # Set this to where the preprocessed dataset should be saved
                     'audio_path' : "/home/dwoodward/masters/data/SASSEC/Signals",
                     'epochs' : 100, #number of epochs to train
@@ -59,8 +59,8 @@ def AAUmachine():
                     'datasets' : 'all', # use all datasets if more than one available for a given task
                     'data_path' : "/home/dwoodw19/thesis/SASSEC/SASSEC_anonymized.csv", # Set this to where the prep$                    
                     'audio_path' : "/home/dwoodw19/thesis/SASSEC/Signals",
-                    'datasets' : ['PEASS-DB',  'SAOC', 'SASSEC',  'SiSEC08'], # use all datasets if more than one available for a given task
-                    'data_base_dir' : "/home/dwoodw19/thesis/data/",
+                    'datasets' : ['PEASS-DB',  'SAOC', 'SASSEC',  'SiSEC08', 'SiSEC18'], # use all datasets if more than one available for a given task
+                    'data_base_dir' : "/home/dwoodw19/thesis/data1/",
                     'epochs' :  1000, #number of epochs to train
                     "estimates_path" : "/home/dwoodw19/thesis/audio-perception-loss/models", # SET THIS PATH TO WHERE YOU WA$                    
                     'expected_sr': 44100,  # Downsample all audio input to this sampling rate
