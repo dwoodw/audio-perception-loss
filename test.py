@@ -9,6 +9,20 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import random
 import museval
 
+from tensorflow.keras.layers import (
+    Dense,
+    BatchNormalization,
+    Concatenate,
+    Conv2D,
+    Conv2DTranspose,
+    Dropout,
+    ELU,
+    LeakyReLU,
+    Multiply,
+    ReLU,
+    Flatten,
+    Softmax)
+
 
 
 model_config = {'augmentation' : False, # Random attenuation of source signals to improve generalisation performance (data augmentation)
@@ -96,12 +110,12 @@ def generate_dataset(model_config):
         data = parse.parseAudio(csv_dataset_list[dataset_selection], audio_path)
         data_length = data['audio_test'][0].shape[1]
         #print(data_length)
-        audio = np.zeros((2, 2, model_config['audio_len']+model_config['features_len'],))
-        audio[0,:, :data_length] = data['audio_test'][0]
-        audio[1,:, :data_length] = data['audio_ref'][0]
+        audio = np.zeros((4, model_config['audio_len']+model_config['features_len']))
+        audio[:2, :data_length] = data['audio_test'][0]
+        audio[2:4, :data_length] = data['audio_ref'][0]
 
-        features = np.zeros((2,4))
-        sdr, isr, sir, sar = museval.evaluate(audio[1, :, :],  audio[0, :,:], win=44100, hop=44100, mode='v4', padding=True)
+        features = np.zeros((4,4))
+        sdr, isr, sir, sar = museval.evaluate(audio[2:4, :],  audio[:2,:], win=44100, hop=44100, mode='v4', padding=True)
         feats = [sdr, isr, sir, sar]
         for idx in range(len(feats)):
             feats[idx] = feats[idx].mean(axis = 1)
@@ -113,9 +127,11 @@ def generate_dataset(model_config):
                     feats[idx][channels] = 50
                 
 
-            features[:, idx] = feats[idx]
-        for idx in range(2):
-            audio[idx,:, model_config['audio_len']:model_config['audio_len']+model_config['features_len']] = features
+            features[:2, idx] = feats[idx]
+
+
+
+        audio[:, model_config['audio_len']:model_config['audio_len'] + model_config['features_len']] = features
 
 
         #print(features)
@@ -124,6 +140,49 @@ def generate_dataset(model_config):
         audio_dict['Ratingscore'] =  data['Ratingscore']
 
         yield audio_dict
+
+def model1(inputs):
+    from tensorflow.keras import datasets, layers, models
+
+    keepFreqs = model_config['keepFreqs']
+    frame_len= model_config['fft_size']
+    hop = model_config['hop']
+    frames = 512 #number of frames taken from audio
+    sr = 44100
+    stft_time_max = 500000/sr #calculates number of time bins and converts to seconds
+
+
+    features = (inputs[ :, :, model_config['audio_len']:model_config['audio_len']+model_config['features_len']])
+    audio = (inputs[:, :, :model_config['audio_len']])
+
+    
+
+    stfts = tf.signal.stft(audio, frame_length=frame_len, frame_step=hop, fft_length=frame_len, window_fn=tf.signal.hann_window)
+    stfts = tf.abs(tf.keras.layers.Permute((3,2,1))(stfts))
+    mix_mag_o = tf.abs(stfts)
+    print(mix_mag_o)
+    mix_mag = mix_mag_o[:,:keepFreqs,:,:]
+    mix_mag = tf.reverse(mix_mag, [1])
+    print(tf.shape(current_layer))
+
+    model = models.Sequential()
+    model.add( Conv2D(64, [5,5], strides = (2,2), padding = 'same', batch_input_shape=(8, 2049, 485, 4)))
+    model.add( Conv2D(128, [3,3], strides = (2,2), padding = 'same'))
+    model.add( Conv2D(128, [3,3], strides = (2,2), padding = 'same'))
+    model.add( Conv2D(256, [3,3], strides = (2,2), padding = 'same'))
+    model.add( Conv2D(256, [3,3], strides = (2,2), padding = 'same'))
+    #model.add( Conv2D(512, [2,2], strides = (2,2), padding = 'same'))
+    model.add( Dense(2048, activation='elu'))
+    model.add( Dense(2048, activation='elu'))
+    model.add( Dense(1024, activation='elu'))
+    model.add( Dense(512, activation='elu'))
+    model.add( Dense(1))
+    model.build()
+    model.summary()
+
+
+
+    return mix_mag
 
 
 
@@ -137,25 +196,16 @@ def stft(audio):
     stft_time_max = 500000/sr #calculates number of time bins and converts to seconds
 
 
-    features = (audio[:, :, :, model_config['audio_len']:model_config['audio_len']+model_config['features_len']])
-    print(features)
-    audio = (audio[:, :, :, :model_config['audio_len']])
-    split1, split2 = tf.split(audio, 2, 1)
-    #diff = tf.math.subtract(split1, split2)
-    #diff_flat = tf.reshape(diff, [tf.shape(diff)[0], tf.shape(diff)[1], tf.shape(diff)[2]])
-    #diff_flat = tf.keras.layers.Permute((2,1))(diff_flat)
+    features = (audio[ :, :, model_config['audio_len']:model_config['audio_len']+model_config['features_len']])
+    audio = (audio[:, :, :model_config['audio_len']])
 
-    #print('split1 shape:', tf.shape(split1))
-    split1_flat = tf.reshape(split1, [tf.shape(split1)[1], tf.shape(split1)[2], tf.shape(split1)[3]])
-    #split1_flat = tf.keras.layers.Permute((2,1))(split1_flat)
-    #import soundfile as sf
-    #sf.write('stereo_file1.wav', split1_flat.numpy()[0,:,:].transpose(), 44100, 'PCM_24')
-    #print('psnr: ', tf.image.psnr(split2, split1, 1, name=None))
-    stfts = tf.signal.stft(split1_flat, frame_length=frame_len, frame_step=hop, fft_length=frame_len, window_fn=tf.signal.hann_window)
-    stfts = tf.abs(tf.keras.layers.Permute((1,3,2))(stfts))
+    stfts = tf.signal.stft(audio, frame_length=frame_len, frame_step=hop, fft_length=frame_len, window_fn=tf.signal.hann_window)
+    stfts = tf.abs(tf.keras.layers.Permute((3,2,1))(stfts))
     mix_mag_o = tf.abs(stfts)
-    mix_mag = mix_mag_o[:,:,:keepFreqs,:]
-    mix_mag = tf.reverse(mix_mag, [2])
+
+    mix_mag = mix_mag_o[:,:keepFreqs,:,:]
+    print(mix_mag)
+    mix_mag = tf.reverse(mix_mag, [1])
     return mix_mag
 
 def display(stfts):
@@ -187,13 +237,15 @@ def get_padding(shape):
         :param shape: Desired output shape
         :return: Padding along each axis (total): (Input frequency, input time)
         '''
-        return [shape[0], 2, 2, shape[3]]
+        return [shape[0], 4, shape[2]]
 
 def feature_labels(element,source_names):
     feature = element['audio']
     labels = {k : el for k, el in element.items() if k in source_names}
 
     return feature, labels
+
+
 
 def dataset_test(model_config):
         #get the dictionary where key = name of dataset value = list of csv files and signal folders (subfolders)
@@ -234,7 +286,6 @@ def dataset_test(model_config):
         audio = np.zeros((2, 2, model_config['audio_len'],))
         audio[0,:, :data_length] = data['audio_test'][0]
         audio[1,:, :data_length] = data['audio_ref'][0]
-        print(audio.shape)
 
         audio_dict = dict()
         audio_dict['audio'] =  audio
@@ -242,7 +293,7 @@ def dataset_test(model_config):
         return audio_dict
 
 def main():
-    disc_input_shape = [model_config["batch_size"], 2, 2, model_config['audio_len']+model_config['features_len']]  # Shape of input
+    disc_input_shape = [model_config["batch_size"], 4, model_config['audio_len']+model_config['features_len']]  # Shape of input
 
     sep_input_shape = get_padding(np.array(disc_input_shape)) 
     sep_output_shape = [1]
@@ -251,7 +302,7 @@ def main():
     #sep input [1, 440999, 2, 2] <class 'list'>
     #sep output [1] <class 'list'>
 
-    dataset = dataset_test(model_config)
+    #dataset = dataset_test(model_config)
 
 
     #print(create_dataset_types())
@@ -264,8 +315,9 @@ def main():
     train_dataset = dataset.batch(model_config["batch_size"],drop_remainder = True)
     inputs = tf.keras.Input(shape = sep_input_shape[1:], batch_size=model_config['batch_size'])
 
+    #for element in train_dataset:
 
-
+    #    model1(element[0])
 
     #print("Elements")
     for element in train_dataset:
@@ -284,7 +336,9 @@ def main():
         audio_spec = abs(stft((element[0]))).numpy()
         #print(audio_spec.shape)
         #print('show spectrogram')
-        display(audio_spec[0,0,:,:])
+        #print(audio_spec.shape)
+        #print(np.amax(audio_spec[0,:,:,0]), np.amin(audio_spec[0,:,:,0]))
+        display(audio_spec[0,:,:,0])
         #print("\n\nDataset Type:", type(train_dataset))
 
 

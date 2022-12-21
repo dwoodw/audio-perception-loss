@@ -29,18 +29,17 @@ class Unet(tf.keras.Model):
         self.features_len = model_config['features_len']
         self.audio_len = model_config['audio_len']
         
-        self.conv1 = Conv2D(32, [5,5], strides = (2,2), padding = 'same')
+        self.conv1 = Conv2D(64, [5,5], strides = (2,2), padding = 'same')
         self.conv2 = Conv2D(64, [3,3], strides = (2,2), padding = 'same')
         self.conv3 = Conv2D(128, [3,3], strides = (2,2), padding = 'same')
-        self.conv4 = Conv2D(256, [3,3], strides = (2,2), padding = 'same')
-        self.conv5 = Conv2D(512, [2,2], strides = (2,2), padding = 'same')
-        self.conv6 = Conv2D(1024, [2,2], strides = (2,2), padding = 'same')
+        self.conv4 = Conv2D(128, [3,3], strides = (2,2), padding = 'same')
+        self.conv5 = Conv2D(256, [2,2], strides = (2,2), padding = 'same')
         self.batch1 = BatchNormalization(axis = -1)
         self.batch2 = BatchNormalization(axis = -1)
         self.batch3 = BatchNormalization(axis = -1)
         self.batch4 = BatchNormalization(axis = -1)
         self.batch5 = BatchNormalization(axis = -1)
-        self.dense1 = Dense(4096, activation='elu')
+        self.dense1 = Dense(2048, activation='elu')
         self.dense2 = Dense(2048, activation='elu')
         self.dense3 = Dense(1024, activation='elu')
         self.dense4 = Dense(512, activation='elu')
@@ -53,17 +52,19 @@ class Unet(tf.keras.Model):
         
     def call(self, inputs):
         
-        features = (inputs[:, :, :, self.audio_len:self.audio_len + self.features_len])
-        audio = (inputs[:, :, :, :self.audio_len])
-        split1, split2 = tf.split(audio, 2, 1)
-        diff = tf.math.subtract(split1, split2)
-        diff_flat = tf.reshape(diff, [tf.shape(diff)[0], tf.shape(diff)[2], tf.shape(diff)[3]])
+        features = (inputs[ :, :, self.audio_len:self.features_len+self.audio_len])
+        audio = (inputs[:, :, :self.audio_len])
 
-        stfts = tf.signal.stft(diff_flat, frame_length=self.frame_len, frame_step=self.hop, fft_length=self.frame_len, window_fn=tf.signal.hann_window)
-        stfts = tf.keras.layers.Permute((1,3,2))(stfts)
-        stfts = tf.reverse(stfts, [2])
+        stfts = tf.signal.stft(audio, frame_length=self.frame_len, frame_step=self.hop, fft_length=self.frame_len, window_fn=tf.signal.hann_window)
+        #stfts = tf.keras.layers.Permute((1,3,2))(stfts)
+        #stfts = tf.reverse(stfts, [2])
+        #mix_mag_o = tf.abs(stfts)
+        #mix_mag = mix_mag_o[:,:,:self.keepFreqs,:]
+        stfts = tf.abs(tf.keras.layers.Permute((3,2,1))(stfts))
         mix_mag_o = tf.abs(stfts)
-        mix_mag = mix_mag_o[:,:,:self.keepFreqs,:]
+
+        mix_mag = mix_mag_o[:,:self.keepFreqs,:,:]
+        mix_mag = tf.reverse(mix_mag, [1])
         current_layer = mix_mag
         #down layer 1
         c1 = self.conv1(current_layer)
@@ -95,8 +96,6 @@ class Unet(tf.keras.Model):
         c6 = self.flat(e5)
 
         #meta features layers
-        snr = tf.image.psnr(split2, split1, 1, name=None)
-        snr = tf.expand_dims(snr, axis =1)
         features = self.flat(features)
 
         c6 = tf.concat([c6, features], axis =1)
